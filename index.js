@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
+const cors = require('cors');
 const AdmZip = require('adm-zip');
 
 const { exec } = require('child_process');
@@ -10,6 +11,7 @@ const port = process.env.PORT || 3000;
 
 
 const app = express();
+app.use(cors());
 
 // Define the static files directory
 const staticFilesDirectory = path.join(__dirname, 'static');
