@@ -33,8 +33,8 @@ app.get('/users', (req, res) => {
       return;
     }
 
-    const users = files.filter(file => fs.lstatSync(path.join(staticFilesDirectory, file)).isDirectory());
-    res.status(200).json(users);
+    // const users = files.filter(file => fs.lstatSync(path.join(staticFilesDirectory, file)).isDirectory());
+    res.status(200).json(files);
   });
 });
 
