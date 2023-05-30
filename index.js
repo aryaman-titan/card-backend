@@ -15,6 +15,8 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const { username } = req.params;
     const userStaticDirectory = path.join(staticFilesDirectory, username);
+    console.log(userStaticDirectory);
+    fs.mkdirSync(userStaticDirectory, {recursive: true});
     cb(null, userStaticDirectory);
   },
   filename: (req, file, cb) => {
@@ -25,8 +27,15 @@ const storage = multer.diskStorage({
 // Create an instance of multer with the storage engine
 const upload = multer({ storage });
 
+
+// Define a route for uploading the zip file
+app.post('/:username/upload', upload.single('file'), (req, res) => {
+  res.status(200).send('File uploaded successfully');
+});
+
 // Define a route for serving the user-specific static files
 app.use('/:username', (req, res) => {
+  console.log("param hit");
   const { username } = req.params;
   const userStaticDirectory = path.join(staticFilesDirectory, username);
   if (fs.existsSync(userStaticDirectory)) {
@@ -35,11 +44,6 @@ app.use('/:username', (req, res) => {
     res.status(404).send('User not found');
   }
 } );
-
-// Define a route for uploading the zip file
-app.post('/upload/:username', upload.single('file'), (req, res) => {
-  res.status(200).send('File uploaded successfully');
-});
 
 // Error-handling middleware
 app.use((err, req, res, next) => {
