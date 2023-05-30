@@ -32,9 +32,9 @@ app.get('/users', (req, res) => {
     return;
   }
 
-  exec(command, (error, stdout, stderr) => {
+  exec(cmd, (error, stdout, stderr) => {
     if (error) {
-      console.error(`Error executing command: ${command}`);
+      console.error(`Error executing cmd: ${cmd}`);
       console.error(error);
       res.status(500).send('Error executing command');
       return;
