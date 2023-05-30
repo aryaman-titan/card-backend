@@ -25,6 +25,36 @@ const storage = multer.diskStorage({
 // Create an instance of multer with the storage engine
 const upload = multer({ storage });
 
+app.get('/users', (req, res) => {
+  fs.readdir(staticFilesDirectory, (err, files) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Error listing users');
+      return;
+    }
+
+    const users = files.filter(file => fs.lstatSync(path.join(staticFilesDirectory, file)).isDirectory());
+    res.status(200).json(users);
+  });
+});
+
+app.get('/delete-user/:username', (req, res) => {
+  const { username } = req.params;
+  const folderPath = path.join(staticFilesDirectory, username);
+
+  // Check if the folder exists
+  if (!fs.existsSync(folderPath)) {
+    res.status(404).send('Folder not found');
+    return;
+  }
+
+  // Delete the folder and its contents
+  fs.rmdirSync(folderPath, { recursive: true });
+
+  res.status(200).send('Folder deleted successfully');
+
+});
+
 // Define a route for uploading the zip file
 app.post('/upload', upload.single('file'), async (req, res) => {
   const { username } = req.body;
