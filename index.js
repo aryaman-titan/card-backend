@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
+const port = process.env.PORT || 3000;
+
 
 const app = express();
 
@@ -46,7 +48,6 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-const port = 3000;
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 });
