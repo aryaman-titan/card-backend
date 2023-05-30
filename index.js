@@ -71,10 +71,10 @@ app.post('/upload', upload.single('file'), (req, res) => {
   const userStaticDirectory = path.join(staticFilesDirectory, username);
 
   // Check if the username directory already exists
-  if (fs.existsSync(userStaticDirectory)) {
-    res.status(409).send('Username already exists');
-    return;
-  }
+  // if (fs.existsSync(userStaticDirectory)) {
+  //   res.status(409).send('Username already exists');
+  //   return;
+  // }
 
   // Create the username directory
   fs.mkdirSync(userStaticDirectory, { recursive: true });
