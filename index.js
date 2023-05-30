@@ -58,31 +58,7 @@ app.get('/delete-user/:username', (req, res) => {
     res.status(404).send('Folder not found');
     return;
   }
-// Create the temporary directory if it doesn't exist
-if (!fs.existsSync(tempDirectory)) {
-  fs.mkdirSync(tempDirectory);
-}
 
-// Extract the uploaded zip file to a temporary directory
-const command = `unzip -o ${zipFilePath} -d ${tempDirectory}`;
-exec(command, (error, stdout, stderr) => {
-  if (error) {
-    console.error(error);
-    res.status(500).send('Error extracting zip file');
-    return;
-  }
-
-  // Move the contents of the subfolder to the user-specific directory
-  const subfolderName = fs.readdirSync(tempDirectory)[0];
-  const subfolderPath = path.join(tempDirectory, subfolderName);
-  fs.renameSync(subfolderPath, userStaticDirectory);
-
-  // Delete the temporary directory and the uploaded zip file
-  fs.rmdirSync(tempDirectory);
-  fs.unlinkSync(zipFilePath);
-
-  res.status(200).send('File uploaded and decompressed successfully');
-});
   // Delete the folder and its contents
   fs.rmdirSync(folderPath, { recursive: true });
 
