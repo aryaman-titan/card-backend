@@ -2,7 +2,9 @@ const express = require('express');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-const { exec } = require('child_process');
+const AdmZip = require('adm-zip');
+
+// const { exec } = require('child_process');
 
 const port = process.env.PORT || 3000;
 
@@ -56,7 +58,31 @@ app.get('/delete-user/:username', (req, res) => {
     res.status(404).send('Folder not found');
     return;
   }
+// Create the temporary directory if it doesn't exist
+if (!fs.existsSync(tempDirectory)) {
+  fs.mkdirSync(tempDirectory);
+}
 
+// Extract the uploaded zip file to a temporary directory
+const command = `unzip -o ${zipFilePath} -d ${tempDirectory}`;
+exec(command, (error, stdout, stderr) => {
+  if (error) {
+    console.error(error);
+    res.status(500).send('Error extracting zip file');
+    return;
+  }
+
+  // Move the contents of the subfolder to the user-specific directory
+  const subfolderName = fs.readdirSync(tempDirectory)[0];
+  const subfolderPath = path.join(tempDirectory, subfolderName);
+  fs.renameSync(subfolderPath, userStaticDirectory);
+
+  // Delete the temporary directory and the uploaded zip file
+  fs.rmdirSync(tempDirectory);
+  fs.unlinkSync(zipFilePath);
+
+  res.status(200).send('File uploaded and decompressed successfully');
+});
   // Delete the folder and its contents
   fs.rmdirSync(folderPath, { recursive: true });
 
@@ -71,41 +97,24 @@ app.post('/upload', upload.single('file'), (req, res) => {
   const userStaticDirectory = path.join(staticFilesDirectory, username);
 
   // Check if the username directory already exists
-  // if (fs.existsSync(userStaticDirectory)) {
-  //   res.status(409).send('Username already exists');
-  //   return;
-  // }
-
-  // Create the username directory
-  fs.mkdirSync(userStaticDirectory, { recursive: true });
-
-  const tempDirectory = path.join(staticFilesDirectory, 'temp');
-
-  // Create the temporary directory if it doesn't exist
-  if (!fs.existsSync(tempDirectory)) {
-    fs.mkdirSync(tempDirectory);
+  if (fs.existsSync(userStaticDirectory)) {
+    res.status(409).send('Username already exists');
+    return;
   }
 
-  // Extract the uploaded zip file to a temporary directory
-  const command = `unzip -o ${zipFilePath} -d ${tempDirectory}`;
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send('Error extracting zip file');
-      return;
-    }
+  try {
+    // Extract the uploaded zip file directly to the user-specific directory
+    const zip = new AdmZip(zipFilePath);
+    zip.extractAllTo(staticFilesDirectory, true);
 
-    // Move the contents of the subfolder to the user-specific directory
-    const subfolderName = fs.readdirSync(tempDirectory)[0];
-    const subfolderPath = path.join(tempDirectory, subfolderName);
-    fs.renameSync(subfolderPath, userStaticDirectory);
-
-    // Delete the temporary directory and the uploaded zip file
-    fs.rmdirSync(tempDirectory);
+    // Delete the uploaded zip file
     fs.unlinkSync(zipFilePath);
 
     res.status(200).send('File uploaded and decompressed successfully');
-  });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error extracting zip file');
+  }
 });
 
 // Define a route for serving the user-specific static files
