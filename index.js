@@ -55,7 +55,7 @@ app.get('/users', (req, res) => {
 });
 
 app.post('/lead-gen', (req, res) => {
-  const { name, email, contact, note, from } = req.body;
+  const { name, email, contact, note, company, from } = req.body;
   console.log(name, email, contact, note, from);
 
   base('Leads').create([
@@ -65,7 +65,8 @@ app.post('/lead-gen', (req, res) => {
         "From": from,
         "Email": email,
         "Contact no.": contact,
-        "Note": note
+        "Note": note,
+        "Company": company
       }
     },
   ], function (err, records) {
