@@ -7,12 +7,16 @@ const AdmZip = require('adm-zip');
 
 const { exec } = require('child_process');
 
+
 const port = process.env.PORT || 3000;
 
+var Airtable = require('airtable');
+var base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base('appovMNG5D6WpWVOL');
 
 const app = express();
 app.use(cors());
 
+app.use(express.json());
 // Define the static files directory
 const staticFilesDirectory = path.join(__dirname, 'static');
 
@@ -50,6 +54,31 @@ app.get('/users', (req, res) => {
   });
 });
 
+app.post('/lead-gen', (req, res) => {
+  const { name, email, contact, note, from } = req.body;
+  console.log(name, email, contact, note, from);
+
+  base('Leads').create([
+    {
+      "fields": {
+        "Name": name,
+        "From": from,
+        "Email": email,
+        "Contact no.": contact,
+        "Note": note
+      }
+    },
+  ], function (err, records) {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    records.forEach(function (record) {
+      console.log(record.getId());
+    });
+  });
+  res.json({ status: "success" });
+});
 
 app.get('/delete-user/:username', (req, res) => {
   const { username } = req.params;
