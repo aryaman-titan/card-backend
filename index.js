@@ -1,23 +1,28 @@
-const express = require('express');
-const path = require('path');
-const multer = require('multer');
-const fs = require('fs');
-const cors = require('cors');
-const AdmZip = require('adm-zip');
+import express from 'express';
+import path from 'path';
+import multer from 'multer';
+import fs from 'fs';
+import cors from 'cors';
+import AdmZip from 'adm-zip';
+import { BingChat } from 'bing-chat';
+import { oraPromise } from 'ora';
 
-const { exec } = require('child_process');
-
+import { exec } from 'child_process';
 
 const port = process.env.PORT || 3000;
 
-var Airtable = require('airtable');
+import Airtable from 'airtable';
+
 var base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base('appovMNG5D6WpWVOL');
 
 const app = express();
 app.use(cors());
 
 app.use(express.json());
+
 // Define the static files directory
+const __filename = new URL(import.meta.url).pathname;
+const __dirname = path.dirname(__filename);
 const staticFilesDirectory = path.join(__dirname, 'static');
 
 // Create a storage engine for multer
@@ -54,9 +59,20 @@ app.get('/users', (req, res) => {
   });
 });
 
-app.post('/lead-gen', (req, res) => {
+app.post('/lead-gen', async (req, res) => {
   const { name, email, contact, note, company, from } = req.body;
-  console.log(name, email, contact, note, from);
+
+  const api = new BingChat({
+    cookie: process.env.BING_COOKIE,
+  })
+
+  const prompt = `Give me all the information you can find about the company '${company}' online in a paragraph. Also find about the role of '${name}' in the company and some background. You must expand all the links with their URL and title of webpage.`
+
+  const result = await oraPromise(api.sendMessage(prompt), {
+    text: prompt,
+    variant: "precise"
+  })
+  console.log(result.text);
 
   base('Leads').create([
     {
@@ -66,7 +82,8 @@ app.post('/lead-gen', (req, res) => {
         "Email": email,
         "Contact no.": contact,
         "Note": note,
-        "Company": company
+        "Company": company,
+        "OSINT": result.text
       }
     },
   ], function (err, records) {
@@ -79,8 +96,10 @@ app.post('/lead-gen', (req, res) => {
     });
   });
   res.json({ status: "success" });
-});
 
+})
+
+// Define a route for deleting the user-specific static files
 app.get('/delete-user/:username', (req, res) => {
   const { username } = req.params;
   const folderPath = path.join(staticFilesDirectory, username);
